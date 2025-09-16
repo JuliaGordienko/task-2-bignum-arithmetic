@@ -61,7 +61,7 @@ def to_twos_complement(a):
 
 
 def from_twos_complement(a):
-    """Преобразование из дополнительный кода для отрицательных чисел (для перевода из массива в int)"""
+    """Преобразование из дополнительного кода для отрицательных чисел (для получения модуля)"""
     res = [(M - 1 - d) for d in a]
     carry = 1
     for i in range(N):
@@ -108,7 +108,7 @@ def compare_abs(a, b):
 
 
 def mul(a, b):
-    """Полное умножение массивов"""
+    """Полное умножение массивов по разрядам (в столбик)"""
     sign = is_negative(a) ^ is_negative(b)
 
     if is_negative(a):
@@ -116,7 +116,7 @@ def mul(a, b):
     if is_negative(b):
         b = from_twos_complement(b)
 
-    res = [0] * (2 * N)
+    res = [0] * (2 * N) # разрядность в 2 раза больше чтобы избежать переполнения на промежуточных вычислениях
     for i in range(N):
         carry = 0
         for j in range(N):
@@ -154,7 +154,10 @@ def shift_left(a, k):
 
 
 def mul_digit(a, d):
-    """Умножение на одну цифру d < M"""
+    """Умножение на одну цифру d < M
+        :arg a - [], d - int
+        :return []
+    """
     res = [0] * N
     carry = 0
     for i in range(N):
@@ -162,7 +165,15 @@ def mul_digit(a, d):
         res[i] = tmp % M
         carry = tmp // M
     if carry:
-        print("Overflow4!")
+        print("Переполнение при умножении на цифру d < M!")
+    else:
+        # Проверяем переполнение по знакам:
+        # если a и b одного знака, а результат другого → переполнение
+        a_sign = (a[-1] >> 30) & 1  # старший бит в последнем разряде (M=2^31)
+        d_sign = d < 0
+        r_sign = (res[-1] >> 30) & 1
+        if a_sign == d_sign and r_sign != a_sign:
+            print("Переполнение при умножении на цифру d < M!")
     return res
 
 
@@ -178,7 +189,7 @@ def div(a, b):
         b = from_twos_complement(b)
 
     if all(x == 0 for x in b):
-        print("Division by zero!")
+        print("Деление на ноль!")
         return [0] * N
 
     q = [0] * N
@@ -189,7 +200,7 @@ def div(a, b):
         r = shift_left(r, 1)
         r[0] = a[i]
 
-        # подбираем максимально возможную цифру q_digit (бинпоиск)
+        # подбираем максимально возможную цифру q_digit (бинпоиск) так, что умножение её на b не будет больше остатка r
         q_digit = 0
         lo, hi = 0, M - 1
         while lo <= hi:
@@ -200,9 +211,9 @@ def div(a, b):
                 lo = mid + 1
             else:
                 hi = mid - 1
-
+        # добавляем найденный q_digit в результат
         q[i] = q_digit
-        # r = r - b * q_digit
+        # r = r - b * q_digit получаем новый остаток для следующего шага
         r = sub(r, mul_digit(b, q_digit))
 
     q = normalize(q)
