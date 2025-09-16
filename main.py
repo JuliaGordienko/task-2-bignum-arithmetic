@@ -6,6 +6,7 @@ def normalize(a):
     return a[:N]
 
 def from_int(x: int):
+    """Перевод числа x из int в массив длины N в M-ричной системе счисления"""
     neg = x < 0
     if neg:
         x = -x
@@ -13,14 +14,22 @@ def from_int(x: int):
     for _ in range(N):
         digits.append(x % M)
         x //= M
-    if x > 0:
-        print("Overflow!")
     if neg:
         digits = to_twos_complement(digits)
+
+    # Проверяем переполнение по знакам:
+    # если знак int числа и приведенного отличаются -> переполнение
+    digits_sign = (digits[-1] >> 30) & 1  # старший бит в последнем разряде (M=2^31)
+    x_sign = neg
+
+    if digits_sign != x_sign:
+        print("Переполнение при инициализации!")
+
     return digits
 
 
 def to_int(a):
+    """Перевод числа из записи для большой арифметики в int"""
     if is_negative(a):
         a = from_twos_complement(a)
         return -_to_int_abs(a)
@@ -29,6 +38,7 @@ def to_int(a):
 
 
 def _to_int_abs(a):
+    """Перевод модуля числа из записи для большой арифметики в int"""
     val = 0
     for i in reversed(range(N)):
         val = val * M + a[i]
@@ -40,6 +50,7 @@ def is_negative(a):
 
 
 def to_twos_complement(a):
+    """Преобразование в дополнительный код для отрицательных чисел (для перевода из int в массив)"""
     res = [(M - 1 - d) for d in a]
     carry = 1
     for i in range(N):
@@ -50,6 +61,7 @@ def to_twos_complement(a):
 
 
 def from_twos_complement(a):
+    """Преобразование из дополнительный кода для отрицательных чисел (для перевода из массива в int)"""
     res = [(M - 1 - d) for d in a]
     carry = 1
     for i in range(N):
@@ -60,22 +72,35 @@ def from_twos_complement(a):
 
 
 def add(a, b):
+    """Сложение больших чисел"""
     carry = 0
     res = []
     for i in range(N):
         s = a[i] + b[i] + carry
         res.append(s % M)
         carry = s // M
-    if carry:
-        print("Overflow!")
-    return normalize(res)
+
+    res = normalize(res)
+
+    # Проверяем переполнение по знакам:
+    # если a и b одного знака, а результат другого → переполнение
+    a_sign = (a[-1] >> 30) & 1   # старший бит в последнем разряде (M=2^31)
+    b_sign = (b[-1] >> 30) & 1
+    r_sign = (res[-1] >> 30) & 1
+
+    if a_sign == b_sign and r_sign != a_sign:
+        print("Переполнение при сложении!")
+
+    return res
 
 
 def sub(a, b):
+    """Разность для больших чисел"""
     return add(a, to_twos_complement(b))
 
 
 def compare_abs(a, b):
+    """Сравнение модулей больших чисел"""
     for i in reversed(range(N)):
         if a[i] != b[i]:
             return 1 if a[i] > b[i] else -1
@@ -104,7 +129,16 @@ def mul(a, b):
             res[i + N] += carry
 
     if any(res[N:]):
-        print("Overflow!")
+        print("Переполнение при умножении!")
+    else:
+        # Проверяем переполнение по знакам:
+        # если a и b одного знака, а результат другого → переполнение
+        a_sign = (a[-1] >> 30) & 1   # старший бит в последнем разряде (M=2^31)
+        b_sign = (b[-1] >> 30) & 1
+        r_sign = (res[N-1] >> 30) & 1
+
+        if a_sign == b_sign and r_sign != a_sign:
+            print("Переполнение при умножении!")
 
     res = res[:N]
     if sign:
@@ -128,7 +162,7 @@ def mul_digit(a, d):
         res[i] = tmp % M
         carry = tmp // M
     if carry:
-        print("Overflow!")
+        print("Overflow4!")
     return res
 
 
@@ -178,9 +212,8 @@ def div(a, b):
 
 
 if __name__ == "__main__":
-    x = from_int(12345678901234567890)
-    y = from_int(-987654321)
-
+    x = from_int(2**355)
+    y = from_int(-2**126)
     print("x =", to_int(x))
     print("y =", to_int(y))
 
@@ -188,3 +221,6 @@ if __name__ == "__main__":
     print("x - y =", to_int(sub(x, y)))
     print("x * y =", to_int(mul(x, y)))
     print("x // y =", to_int(div(x, y)))
+    print("y * (x // y) =", to_int(mul(y, div(x, y))))
+
+
