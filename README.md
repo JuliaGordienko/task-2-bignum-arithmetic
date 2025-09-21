@@ -1,7 +1,23 @@
-Задание\
+## Проект task-2-bignum-arithmetic
+
+Требуется Python 3.13 или выше.
+
+# Установка и запуск
+### Установка (Linux / macOS)
+python3 -m venv .venv\
+source .venv/bin/activate\
+
+### Установка (Windows Powershell)
+python -m venv .venv\
+.venv\Scripts\Activate.ps1\
+
+### Зaпycк
+python main.py
+
+# Задание
 Реализовать длинную арифметику для целых чисел с операциями сложения, вычитания, умножения и целочисленного деления.
 
-Реализация в общих словах:\
+### Реализация в общих словах:
 M = 2**31\
 N = 100
 
